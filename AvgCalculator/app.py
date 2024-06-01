@@ -1,26 +1,42 @@
 from flask import Flask, request, jsonify
-import json
+import requests
+import os
 
 app = Flask(__name__)
 
 WINDOW_SIZE = 10
 WINDOW = []
 
-MOCK_DATA = {
-    'p': [2, 3, 5, 7, 11, 13, 17, 19, 23, 29],
-    'f': [0, 1, 1, 2, 3, 5, 8, 13, 21, 34],
-    'e': [2, 4, 6, 8, 10, 12, 14, 16, 18, 20],
-    'r': [15, 22, 8, 11, 23, 4, 16, 42, 7, 19]
-}
+TOKEN = os.getenv("API_TOKEN")
+
 
 def fetch_numbers_from_server(numberid):
-    return MOCK_DATA.get(numberid, [])
+    headers = {
+        'Authorization': f'Bearer {TOKEN}'
+    }
+    try:
+        if numberid == 'p':
+            response = requests.get(f'http://20.244.56.144/test/primes', headers=headers, timeout=0.5)
+            response.raise_for_status()
+            return response.json().get('numbers', [])
+        if numberid == 'e':
+            response = requests.get(f'http://20.244.56.144/test/even', headers=headers, timeout=0.5)
+            response.raise_for_status()
+            return response.json().get('numbers', [])
+        if numberid == 'f':
+            response = requests.get(f'http://20.244.56.144/test/fibo', headers=headers, timeout=0.5)
+            response.raise_for_status()
+            return response.json().get('numbers', [])
+        if numberid == 'r':
+            response = requests.get(f'http://20.244.56.144/test/rand', headers=headers, timeout=0.5)
+            response.raise_for_status()
+            return response.json().get('numbers', [])
+    except requests.RequestException as e:
+        print(f"Failed to fetch data from server: {e}")
+        return []
 
 @app.route('/numbers/<numberid>', methods=['GET'])
 def get_numbers(numberid):
-    if numberid not in MOCK_DATA:
-        return jsonify({"error": "Invalid number ID"}), 400
-
     numbers = fetch_numbers_from_server(numberid)
 
     global WINDOW
